@@ -49,9 +49,14 @@ def monte_carlo_localize(robot: cozmo.robot.Robot):
   particles = []  # starts as randomized particles, aka guesses for where the robot is facing
   M = 100   # Number of particles
   i = 0     # Iterations
+
+  dist = width // M
+  f = dist
   while i < M:
-      particles.append(random.randint(0, width))
-      i = i + 1
+    particles.append(f)
+      # particles.append(random.randint(0, width))
+    f += dist
+    i = i + 1
   # Saves preliminary predictions to a dataframe
   pointFrame = pd.DataFrame(particles, columns=['particles'])
   

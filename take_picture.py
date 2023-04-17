@@ -23,7 +23,7 @@ def take_pic(robot: cozmo.robot.Robot):
     if not os.path.exists(directory_name):
         os.mkdir(directory_name)
     
-    degree_increment = 10
+    degree_increment = 15
     angle = 0
     
     while angle < 360:
