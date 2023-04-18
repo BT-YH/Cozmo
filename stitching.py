@@ -27,7 +27,7 @@ def run():
       cv2.imwrite('./Panorama.jpeg',pano)
     '''
     (ret,pano_0) = stitcher.stitch(images)
-    pano_0 = reshape(pano_0)
+    #pano_0 = reshape(pano_0)
     #cv2.imshow(pano_0)
     cv2.imwrite('./Panorama_0.jpeg',pano_0)
 
@@ -36,17 +36,8 @@ def run():
     for i in images[7:20]:
       new_images.append(i)
     (ret,pano_1) = stitcher.stitch(new_images)
-    pano_1 = reshape(pano_1)
+    #pano_1 = reshape(pano_1)
     cv2.imwrite('./Panorama_1.jpeg',pano_1)
-    
-    pano_0 = cv2.imread('./Panorama_0.jpeg')
-    pano_1 = cv2.imread('./Panorama_1.jpeg')
-
-    panos = [pano_0, pano_1]
-
-    (ret,pano) = stitcher.stitch(panos)
-    print(ret)
-    cv2.imwrite('./Panorama.jpeg', pano)
 
   except Exception as e:
     print(e)
