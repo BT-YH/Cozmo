@@ -34,8 +34,9 @@ sensorVariance = 0.01
 proportionalMotionVariance = 0.01
 
 def monte_carlo_localize(robot: cozmo.robot.Robot):
+  head_pos = robot.set_head_angle((degrees(35))).wait_for_completed()
   robot.say_text("starting mcl").wait_for_completed()
-  panoPixelArray = cv2.imread("Panorama.jpeg")
+  panoPixelArray = cv2.imread("Panorama_0.jpeg")
   panoPixelArray.astype("float")
   dimensions = panoPixelArray.shape
   width = dimensions[1]
@@ -56,7 +57,8 @@ def monte_carlo_localize(robot: cozmo.robot.Robot):
     particles.append(f)
       # particles.append(random.randint(0, width))
     f += dist
-    i = i + 1
+    i += 1
+
   # Saves preliminary predictions to a dataframe
   pointFrame = pd.DataFrame(particles, columns=['particles'])
   
@@ -64,7 +66,7 @@ def monte_carlo_localize(robot: cozmo.robot.Robot):
   while i < 10: # time steps is arbitrary
     # NEED TO calculate random movement
     # Rotate 10 degrees to right
-    robot.turn_in_place(degrees(-10.0)).wait_for_completed()
+    robot.turn_in_place(degrees(-15.0)).wait_for_completed()
     cv_cozmo_image2 = None
     latest_image = robot.world.latest_image
     while latest_image is None:
@@ -94,8 +96,8 @@ def monte_carlo_localize(robot: cozmo.robot.Robot):
       weight = measurement_model(cv_cozmo_image2, newPose) 
       
       # Algorithm MCL line 6:
-      pixelWeights = np.append(pixelWeights,[weight])
-      pixelPopulationNumber = np.append(pixelPopulationNumber,[newPose])
+      pixelWeights.append(weight)
+      pixelPopulationNumber.append(newPose)
 
     # Compute probabilities (proportional to weights) and cumulative distribution function for sampling of next pose population
     # NOTE: This is the heart of weighted resampling that is _not_ given in the text pseudocode.
@@ -150,16 +152,17 @@ def sample_motion_model(xPixel, width):
 def measurement_model(latestImage, particlePose):
     # Gaussian (i.e. normal) error, see https://en.wikipedia.org/wiki/Normal_distribution
     # same as p_hit in Figure 6.2(a), but without bounds. Table 5.2
-  img = Image.open("Panorama.jpeg")
+  img = Image.open("Panorama_0.jpeg")
   width, height = img.size
   #get the slice of the panorama that corresponds to the pixel
   particle = slice(img, particlePose, 320, 320, height)
   particle = np.array(particle)
   #resize the images
-  cv_particle = cv2.resize(particle, (width, height))
+  cv_particle_0 = cv2.resize(particle, (width, height))
+
   image2 = cv2.resize(latestImage, (width, height))
   #compare how similar/different they are using MSE
-  diff = compare_images(cv_particle, image2)
+  diff = compare_images(cv_particle_0, image2)
   #see Text Table 5.2, implementation of probability normal distribution
   return (1.0 / math.sqrt(2 * math.pi * sensorVariance)) * math.exp(- (diff * diff) / (2 * sensorVariance))
 
@@ -189,7 +192,7 @@ def compare_images(imageA, imageB):
 def slice(imgName, center, pixelLeft, pixelRight, slice_size):
   # slice an image into parts slice_size wide
   # initialize boundaries
-  img = Image.open("Panorama.jpeg")
+  img = Image.open("Panorama_0.jpeg")
   width, height = img.size
   left = center - pixelLeft
   right = center + pixelRight
@@ -243,7 +246,7 @@ def slice(imgName, center, pixelLeft, pixelRight, slice_size):
   #(which should be wrapping around)
   #turning in degrees but units should be pixels
   #can't wrap around until we know...
-  #what we are calling pixel 0
+  #what we are calling pixel
 
   #something that would print out where it thinks it is at 
   #and where it is facing as a demonstration of localization
