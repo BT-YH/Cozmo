@@ -11,8 +11,9 @@ from cozmo.util import degrees, distance_mm, speed_mmps
 import numpy as np
 from PIL import Image
 import math 
+from scipy import stats as st
 
-
+mm = 0
 
 def main(robot: cozmo.robot):
     #tp.take_pictures(robot)
@@ -75,7 +76,7 @@ def monte_carlo_localize(robot: cozmo.robot.Robot):
     annotated = latest_image.annotate_image()
     if latest_image is not None:
       converted = annotated.convert()
-      converted.save("latestImage", "JPEG", resolution=10)
+      converted.save("latestImage.jpeg", "JPEG", resolution=10)
     cozmo_image2 = latest_image.annotate_image(scale=None, fit_size=None, resample_mode=0)
     # Storing pixel RGB values in a 3D array
     cv_cozmo_image2 = np.array(cozmo_image2)
@@ -140,7 +141,13 @@ def monte_carlo_localize(robot: cozmo.robot.Robot):
   df = df.join(pointFrame) # joins new predictions with original predictions
   df = df.sort_values(by=['newParticles'], ascending=False)
   df.to_csv("data/data.csv", index = False)
+
+  newParticles = np.array(newParticles)
+  curr_pos = st.mode(newParticles)
+
   robot.say_text("Finshing mcl").wait_for_completed()
+  global mm
+  mm = curr_pos
 
 
 def sample_motion_model(xPixel, width):
@@ -152,10 +159,10 @@ def sample_motion_model(xPixel, width):
 def measurement_model(latestImage, particlePose):
     # Gaussian (i.e. normal) error, see https://en.wikipedia.org/wiki/Normal_distribution
     # same as p_hit in Figure 6.2(a), but without bounds. Table 5.2
-  img = Image.open("Panorama_0.jpeg")
+  img = Image.open("./Panorama_0.jpeg")
   width, height = img.size
   #get the slice of the panorama that corresponds to the pixel
-  particle = slice(img, particlePose, 320, 320, height)
+  particle = slice(img, particlePose, 160, 160, height)
   particle = np.array(particle)
   #resize the images
   cv_particle_0 = cv2.resize(particle, (width, height))
@@ -189,43 +196,38 @@ def compare_images(imageA, imageB):
   return err
 
 # Creates a slice of the panorama to compare to latestImage
-def slice(imgName, center, pixelLeft, pixelRight, slice_size):
-  # slice an image into parts slice_size wide
+def slice(imgName, center, pixelLeft, pixelRight, height):
+  # slice an image into parts height wide
   # initialize boundaries
-  img = Image.open("Panorama_0.jpeg")
+  img = Image.open("./Panorama_0.jpeg")
   width, height = img.size
   left = center - pixelLeft
   right = center + pixelRight
+  slice_width = pixelLeft + pixelRight
 
   # if we go out of bounds set the limit to be the bounds of the image
   if center < pixelLeft:
       left = 0
+      right = 360
   if center > (width - pixelRight):
       right = width
+      left = width - 360
 
   # newImgSize = dim(center - 20, center + 20)
   upper = 0
-  slices = int(math.ceil(width / slice_size))
-  count = 1
 
-  for slice in range(slices):
-      # if we are at the end, set the lower bound to be the bottom of the image
-      if count == slices:
-          lower = width
-      else:
-          lower = int(count * slice_size)
+  lower = height
+  # box with boundaries6
+  bbox = (left, upper, right, lower)
+  sliced_image = img.crop(bbox)
+  cv_sliced = np.array(sliced_image)
+  # save the slice
 
-          # box with boundaries
-      bbox = (left, upper, right, lower)
-      sliced_image = img.crop(bbox)
-      cv_sliced = np.array(sliced_image)
-      upper += slice_size
-      # save the slice
+  cv2.imwrite("Sliced.jpeg", cv_sliced)
+  return cv_sliced
+  
 
-      count += 1
-      cv2.imwrite("Sliced.jpeg", cv_sliced)
-      return sliced_image
-
+     
 # TO-DO
 
   #locate in panorama if it has gone a full 360

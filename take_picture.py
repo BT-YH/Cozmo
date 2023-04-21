@@ -10,6 +10,8 @@ import stitching
 
 #image_dict = {}
 
+mode = 0
+
 def take_pic(robot: cozmo.robot.Robot):
     action1 = robot.say_text("taking pictures", in_parallel=True)
     action2 = robot.set_lift_height(0, in_parallel=True)
@@ -57,7 +59,7 @@ def randomTurn(robot: cozmo.robot.Robot):
   robot.camera.image_stream_enabled = True
   # Rotate a random degree
   deg = random.randint(0, 60)  
-  robot.turn_in_place(degrees(deg + 60)).wait_for_completed()
+  robot.turn_in_place(degrees(deg + 100)).wait_for_completed()
     
   # Take a picture and save as "latestImage"
   latest_image = robot.world.latest_image
@@ -66,11 +68,30 @@ def randomTurn(robot: cozmo.robot.Robot):
     converted = annotated.convert()
     converted.save("latestImage.jpeg", "JPEG", resolution=10)
   robot.say_text("Oh Noooooooo they kidnapped me").wait_for_completed()
-  return deg
 
 # Signals the program's completion
 def madeItHome(robot: cozmo.robot.Robot):
-  robot.say_text("Im hoooooooome").wait_for_completed()
+  global mode
+  mode = float(mode.mode[0])
+  pano = cv2.imread('./Panorama_0.jpeg')
+  home = cv2.imread('./images/rotation_0.jpeg')
+
+  width_home = home.shape[1]
+  width = pano.shape[1]
+
+  home_start = width - width_home / 2
+
+  print(mode)
+  print(width)
+
+
+  d = 360 * (mode - home_start) / width
+
+  a1 = robot.turn_in_place(degrees(d), in_parallel=True)
+  a2 = robot.say_text("I'm hoooooooome", in_parallel=True)
+  a1.wait_for_completed()
+  a2.wait_for_completed()
+
 
 def rotato(robot: cozmo.robot.Robot):
   # Enabling Cozmo Camera
@@ -88,17 +109,17 @@ def rotato(robot: cozmo.robot.Robot):
 def fin_sti(robot: cozmo.robot.Robot):
     robot.say_text("Stitched").wait_for_completed()
 
-
+''''''
 # Initial set up for the panorama
-cozmo.run_program(take_pic)
+#cozmo.run_program(take_pic)
 
 # Creates the panorama as Panorama.jpeg
 stitching.run()
 cozmo.run_program(fin_sti)
 # 'Kidnaps' the cozmo by turning a random direction
-degree = cozmo.run_program(randomTurn)
-
+cozmo.run_program(randomTurn)
+''''''
 # Runs Monte Carlo algorithm 
 cozmo.run_program(mcl.monte_carlo_localize)
-
+mode = mcl.mm
 cozmo.run_program(madeItHome)
