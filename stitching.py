@@ -9,7 +9,7 @@ def run():
   print("\n\n\n!!!!! STITCH !!! \n\n\n\n")
   images = []
   #standardX, standardY = 500, 500
-  for i in range(24):
+  for i in range(23):
     image = cv2.imread('./images/rotation_' + str((i * 15)) +'.jpeg')
     #if image is not None:
     images.append(image)
@@ -32,4 +32,4 @@ def run():
   except Exception as e:
     print(e)
 
-# run()
+run()

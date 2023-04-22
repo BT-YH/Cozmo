@@ -192,7 +192,7 @@ def compare_images(imageA, imageB):
   height = dimensions[0]
   err = np.sum((imageA.astype("float") - imageB.astype("float")) ** 2)
   # Dividing the values so they fit 
-  err /= (width * height * width * height)
+  err /= width * height * dimensions[2]
   return err
 
 # Creates a slice of the panorama to compare to latestImage
