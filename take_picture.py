@@ -7,6 +7,8 @@ from cozmo.util import degrees
 import random
 import mcl
 import stitching
+import histogram
+
 
 #image_dict = {}
 
@@ -15,7 +17,7 @@ mode = 0
 def take_pic(robot: cozmo.robot.Robot):
     action1 = robot.say_text("taking pictures", in_parallel=True)
     action2 = robot.set_lift_height(0, in_parallel=True)
-    action3 = robot.set_head_angle((degrees(35)), in_parallel=True)
+    action3 = robot.set_head_angle((degrees(15)), in_parallel=True)
     action1.wait_for_completed()
     action2.wait_for_completed()
     action3.wait_for_completed()
@@ -79,13 +81,14 @@ def madeItHome(robot: cozmo.robot.Robot):
   width_home = home.shape[1]
   width = pano.shape[1]
 
-  home_start = width - width_home / 2
-
-  print(mode)
-  print(width)
-
+  home_start = width / 2
 
   d = 360 * (mode - home_start) / width
+  print()
+  print(f"mode: {mode}")
+  print(f"diff: {mode - home_start}")
+  print(f"degree: {d}")
+  print()
 
   a1 = robot.turn_in_place(degrees(d), in_parallel=True)
   a2 = robot.say_text("I'm hoooooooome", in_parallel=True)
@@ -111,15 +114,16 @@ def fin_sti(robot: cozmo.robot.Robot):
 
 ''''''
 # Initial set up for the panorama
-#cozmo.run_program(take_pic)
+# cozmo.run_program(take_pic)
 
 # Creates the panorama as Panorama.jpeg
-stitching.run()
-cozmo.run_program(fin_sti)
+# stitching.run()
+# cozmo.run_program(fin_sti)
 # 'Kidnaps' the cozmo by turning a random direction
-cozmo.run_program(randomTurn)
+# cozmo.run_program(randomTurn)
 ''''''
 # Runs Monte Carlo algorithm 
 cozmo.run_program(mcl.monte_carlo_localize)
 mode = mcl.mm
 cozmo.run_program(madeItHome)
+# histogram.makeHistogram()

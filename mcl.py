@@ -12,6 +12,7 @@ import numpy as np
 from PIL import Image
 import math 
 from scipy import stats as st
+from PIL import ImageChops
 
 mm = 0
 
@@ -35,8 +36,10 @@ sensorVariance = 0.01
 proportionalMotionVariance = 0.01
 
 def monte_carlo_localize(robot: cozmo.robot.Robot):
-  head_pos = robot.set_head_angle((degrees(35))).wait_for_completed()
+  robot.set_head_angle((degrees(15))).wait_for_completed()
+  robot.set_lift_height(0).wait_for_completed()
   robot.say_text("starting mcl").wait_for_completed()
+
   panoPixelArray = cv2.imread("Panorama_0.jpeg")
   panoPixelArray.astype("float")
   dimensions = panoPixelArray.shape
@@ -64,10 +67,10 @@ def monte_carlo_localize(robot: cozmo.robot.Robot):
   pointFrame = pd.DataFrame(particles, columns=['particles'])
   
   i = 0
-  while i < 10: # time steps is arbitrary
+  while i < 8: # time steps is arbitrary
     # NEED TO calculate random movement
     # Rotate 10 degrees to right
-    robot.turn_in_place(degrees(-15.0)).wait_for_completed()
+    robot.turn_in_place(degrees(-5.0)).wait_for_completed()
     cv_cozmo_image2 = None
     latest_image = robot.world.latest_image
     while latest_image is None:
@@ -95,7 +98,8 @@ def monte_carlo_localize(robot: cozmo.robot.Robot):
       # Algorithm MCL line 5:
       # map is [0, 1] interval space for movement, sensing distance from 0
       weight = measurement_model(cv_cozmo_image2, newPose) 
-      
+      #weight = weight if weight > 0 else 0.001
+
       # Algorithm MCL line 6:
       pixelWeights.append(weight)
       pixelPopulationNumber.append(newPose)
@@ -162,16 +166,24 @@ def measurement_model(latestImage, particlePose):
   img = Image.open("./Panorama_0.jpeg")
   width, height = img.size
   #get the slice of the panorama that corresponds to the pixel
-  particle = slice(img, particlePose, 160, 160, height)
-  particle = np.array(particle)
-  #resize the images
-  cv_particle_0 = cv2.resize(particle, (width, height))
-
-  image2 = cv2.resize(latestImage, (width, height))
+  image1 = slice(img, particlePose, 160, 160, height)
+  image2 = latestImage
   #compare how similar/different they are using MSE
-  diff = compare_images(cv_particle_0, image2)
+
+  cv2.imwrite("./image1.jpeg", image1)
+  cv2.imwrite("./image2.jpeg", image2)
+
+  image1 = Image.open("./image1.jpeg")
+  image2 = Image.open("./image2.jpeg")
+
+  diff = compare_images(image1, image2)
   #see Text Table 5.2, implementation of probability normal distribution
-  return (1.0 / math.sqrt(2 * math.pi * sensorVariance)) * math.exp(- (diff * diff) / (2 * sensorVariance))
+  result = (1.0 / math.sqrt(2 * math.pi * sensorVariance)) * math.exp(- (diff * diff) / (2 * sensorVariance))
+  # print(f"Left: {(1.0 / math.sqrt(2 * math.pi * sensorVariance))} ")
+  # print(f"Right: {math.exp(- (diff * diff) / (2 * sensorVariance)) }")
+  # print(f"Result:  {result}")
+  # print()
+  return result
 
 def sample_sensor_model(pose):
   # ideal sensor will return pose (distance to right of 0), but we'll model Gaussian noise (could have more components as in class)
@@ -187,13 +199,27 @@ def sample_normal_distribution(variance):
 # Compares images by pixels using Mean Squared Error formula
 def compare_images(imageA, imageB):
   # See https://en.wikipedia.org/wiki/Mean_squared_error 
+  '''
   dimensions = imageA.astype("float").shape
   width = dimensions[1]
   height = dimensions[0]
   err = np.sum((imageA.astype("float") - imageB.astype("float")) ** 2)
   # Dividing the values so they fit 
-  err /= width * height * dimensions[2]
-  return err
+  err /= (width * height * dimensions[2]) ** 2
+  # print(f"Error:  {err}")
+  '''
+
+  dif = ImageChops.difference(imageA, imageB)
+  dif = np.array(dif)
+  dimensions = dif.astype("float").shape
+  width = dimensions[1]
+  length = dimensions[0]
+  height = dimensions[2]
+
+
+  return np.mean(dif) / (width * height * length) ** 2
+
+  #return err
 
 # Creates a slice of the panorama to compare to latestImage
 def slice(imgName, center, pixelLeft, pixelRight, height):
