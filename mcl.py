@@ -67,10 +67,10 @@ def monte_carlo_localize(robot: cozmo.robot.Robot):
   pointFrame = pd.DataFrame(particles, columns=['particles'])
   
   i = 0
-  while i < 8: # time steps is arbitrary
+  while i < 10: # time steps is arbitrary
     # NEED TO calculate random movement
     # Rotate 10 degrees to right
-    robot.turn_in_place(degrees(-5.0)).wait_for_completed()
+    robot.turn_in_place(degrees(-10.0)).wait_for_completed()
     cv_cozmo_image2 = None
     latest_image = robot.world.latest_image
     while latest_image is None:
@@ -94,7 +94,7 @@ def monte_carlo_localize(robot: cozmo.robot.Robot):
     # Algorithm MCL Line 3
     for pose in particles:
       # Algorithm MCL Line 4
-      newPose = sample_motion_model(pose, width)
+      newPose = sample_motion_model(pose, width, width / 36)
       # Algorithm MCL line 5:
       # map is [0, 1] interval space for movement, sensing distance from 0
       weight = measurement_model(cv_cozmo_image2, newPose) 
@@ -138,6 +138,12 @@ def monte_carlo_localize(robot: cozmo.robot.Robot):
         newParticles.append(pixelPopulationNumber[index])
     particles = newParticles
     i += 1
+    np_particles = np.array(particles)
+    print("\n\n")
+    print("guess: ")
+    print(st.mode(np_particles))
+    print("\n\n")
+
   newParticles.sort()
 
   # updating the CSV file with the original predictions and the newest predictions
@@ -146,18 +152,22 @@ def monte_carlo_localize(robot: cozmo.robot.Robot):
   df = df.sort_values(by=['newParticles'], ascending=False)
   df.to_csv("data/data.csv", index = False)
 
-  newParticles = np.array(newParticles)
-  curr_pos = st.mode(newParticles)
 
   robot.say_text("Finshing mcl").wait_for_completed()
   global mm
-  mm = curr_pos
+  mm = particles[find_groups(10, particles)]
 
 
-def sample_motion_model(xPixel, width):
+def sample_motion_model(xPixel, width, dist):
   # making variance proportional to magnitude of motion command
-  newX = xPixel + sample_normal_distribution(abs(proportionalMotionVariance))
-  return max(0, min(width, newX))
+  newX = xPixel - dist + sample_normal_distribution(abs(dist * proportionalMotionVariance))
+  if newX < 0 or newX > width:
+    if newX < 0:
+       return width + newX
+    else:
+       return newX - width
+  else:
+     return newX
 
 # map in this case is [0, 1] allowable poses
 def measurement_model(latestImage, particlePose):
@@ -177,24 +187,22 @@ def measurement_model(latestImage, particlePose):
   image2 = Image.open("./image2.jpeg")
 
   diff = compare_images(image1, image2)
+  print(f"diff: {diff}")
   #see Text Table 5.2, implementation of probability normal distribution
   result = (1.0 / math.sqrt(2 * math.pi * sensorVariance)) * math.exp(- (diff * diff) / (2 * sensorVariance))
   # print(f"Left: {(1.0 / math.sqrt(2 * math.pi * sensorVariance))} ")
   # print(f"Right: {math.exp(- (diff * diff) / (2 * sensorVariance)) }")
-  # print(f"Result:  {result}")
-  # print()
+  print(f"Result:  {result}")
+  print()
   return result
-
-def sample_sensor_model(pose):
-  # ideal sensor will return pose (distance to right of 0), but we'll model Gaussian noise (could have more components as in class)
-  return pose + sample_normal_distribution(sensorVariance)
 
 #see Text Table 5.4, implementation of sample normal distribution
 def sample_normal_distribution(variance):
+  b = math.sqrt(variance)
   sum = 0
   for i in range(12):
-    sum += (2.0 * random.random()) - 1.0
-  return math.sqrt(variance) * sum / 2.0
+    sum += (random.random() + random.random() - 1) * b
+  return sum / 2.0
 
 # Compares images by pixels using Mean Squared Error formula
 def compare_images(imageA, imageB):
@@ -217,7 +225,7 @@ def compare_images(imageA, imageB):
   height = dimensions[2]
 
 
-  return np.mean(dif) / (width * height * length) ** 2
+  return 200 * np.mean(dif) / (width * length)
 
   #return err
 
@@ -252,7 +260,23 @@ def slice(imgName, center, pixelLeft, pixelRight, height):
   cv2.imwrite("Sliced.jpeg", cv_sliced)
   return cv_sliced
   
+def find_groups(diff, particles):
+  groups = [[]] * len(particles)
+  for i in range(len(particles)):
+    groups[i].append(particles[i])
+    for f in range(i+1, len(particles)):
+        if (abs(particles[i] - particles[f]) < diff):
+          groups[i].append(particles[f])
+          groups[f].append(particles[i])
 
+  max = 0
+  max_index = -1
+  for i in range(len(groups)):
+    if len(groups[i]) > max:
+      max = len(groups[i])
+      print(f"Group Length: {max}")
+      max_index = i
+  return max_index
      
 # TO-DO
 

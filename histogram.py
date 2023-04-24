@@ -10,9 +10,9 @@ import matplotlib.pyplot as plt
 # Used for making a histogram to display where cozmo thinks he is
 def makeHistogram():
   # Gets values from the csv file
-  df = pd.read_csv("data/data.csv")
+  df = pd.read_csv("./data/data.csv")
   # Gets width of graph from panorama
-  pano = cv2.imread("Panorama.jpeg")
+  pano = cv2.imread("./Panorama_0.jpeg")
   dimensions = pano.shape
   width = dimensions[1]
 
@@ -28,4 +28,4 @@ def makeHistogram():
   plt.title('Robot')
   plt.xlabel('Width of Panorama')
   plt.ylabel('Frequency of Predicitons')
-  plt.savefig("hist.png")
+  plt.savefig("./hist.png")
