@@ -39,7 +39,7 @@ def take_pic(robot: cozmo.robot.Robot):
             print('Awaiting first comzo image...')
             time.sleep(1)
             latest_image = robot.world.latest_image
-        
+
         if latest_image is not None:
             print('image = %s' % latest_image)
             annotated = latest_image.annotate_image()
@@ -70,12 +70,12 @@ def randomTurn(robot: cozmo.robot.Robot):
   if latest_image is not None:
     converted = annotated.convert()
     converted.save("latestImage.jpeg", "JPEG", resolution=10)
-  robot.say_text("Oh Noooooooo they kidnapped me").wait_for_completed()
+  # robot.say_text("Oh Noooooooo they kidnapped me").wait_for_completed()
 
 # Signals the program's completion
 def madeItHome(robot: cozmo.robot.Robot):
   global mode
-  # mode = float(mode.mode[0])
+  mode = float(mode.mode[0])
   pano = cv2.imread('./Panorama_0.jpeg')
   home = cv2.imread('./images/rotation_0.jpeg')
   home = home[10:home.shape[1]-10, 10:home.shape[0]-10]
@@ -96,7 +96,7 @@ def madeItHome(robot: cozmo.robot.Robot):
   print()
 
   a1 = robot.turn_in_place(degrees(d), in_parallel=True)
-  a2 = robot.say_text("I'm hoooooooome", in_parallel=True)
+  a2 = robot.say_text("Done", in_parallel=True)
   a1.wait_for_completed()
   a2.wait_for_completed()
 
@@ -117,16 +117,38 @@ def rotato(robot: cozmo.robot.Robot):
 def fin_sti(robot: cozmo.robot.Robot):
     robot.say_text("Stitched").wait_for_completed()
 
+
+def on_robot_picked_up(robot: cozmo.robot.Robot):
+    while (not robot.is_picked_up):
+       time.sleep(.5)
+       print("waiting")
+       pass
+
+    if (not robot.is_picked_up):
+      latest_image = robot.world.latest_image
+
+      while latest_image is None:
+        latest_image = robot.world.latest_image
+      annotated = latest_image.annotate_image()
+      if latest_image is not None:
+        converted = annotated.convert()
+        converted.save("latestImage.jpeg", "JPEG", resolution=10)
+
+
+    
+
 ''''''
 # Initial set up for the panorama
-cozmo.run_program(take_pic)
+# cozmo.run_program(take_pic)
 
 # Creates the panorama as Panorama.jpeg
-stitching.run()
-cozmo.run_program(fin_sti)
+# stitching.run()
+# cozmo.run_program(fin_sti)
 # 'Kidnaps' the cozmo by turning a random direction
-cozmo.run_program(randomTurn)
+# cozmo.run_program(randomTurn)
 ''''''
+
+cozmo.run_program(on_robot_picked_up)
 # Runs Monte Carlo algorithm 
 cozmo.run_program(mcl.monte_carlo_localize)
 mode = mcl.mm

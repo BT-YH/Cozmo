@@ -16,11 +16,6 @@ from PIL import ImageChops
 
 mm = 0
 
-def main(robot: cozmo.robot):
-    #tp.take_pictures(robot)
-    #robot.add_event_handler(pycozmo.event.EvtRobotPickedUpChange, on_movement)
-    monte_carlo_localize(robot)
-
 def on_movement(robot: cozmo.robot.Robot, event, **kw):
     latest_image = robot.world.latest_image
     while latest_image is None:
@@ -38,7 +33,7 @@ proportionalMotionVariance = 0.01
 def monte_carlo_localize(robot: cozmo.robot.Robot):
   robot.set_head_angle((degrees(15))).wait_for_completed()
   robot.set_lift_height(0).wait_for_completed()
-  robot.say_text("starting mcl").wait_for_completed()
+  robot.say_text("mcl").wait_for_completed()
 
   panoPixelArray = cv2.imread("Panorama_0.jpeg")
   panoPixelArray.astype("float")
@@ -142,7 +137,6 @@ def monte_carlo_localize(robot: cozmo.robot.Robot):
     print("\n\n")
     print("guess: ")
     print(st.mode(np_particles))
-    print("\n\n")
 
   newParticles.sort()
 
@@ -152,10 +146,15 @@ def monte_carlo_localize(robot: cozmo.robot.Robot):
   df = df.sort_values(by=['newParticles'], ascending=False)
   df.to_csv("data/data.csv", index = False)
 
+  particles = np.array(particles)
 
   robot.say_text("Finshing mcl").wait_for_completed()
   global mm
-  mm = particles[find_groups(10, particles)]
+  mm = st.mode(particles)
+
+  #mm = particles[find_groups(10, particles)]
+
+
 
 
 def sample_motion_model(xPixel, width, dist):
@@ -187,13 +186,12 @@ def measurement_model(latestImage, particlePose):
   image2 = Image.open("./image2.jpeg")
 
   diff = compare_images(image1, image2)
-  print(f"diff: {diff}")
+  #print(f"diff: {diff}")
   #see Text Table 5.2, implementation of probability normal distribution
   result = (1.0 / math.sqrt(2 * math.pi * sensorVariance)) * math.exp(- (diff * diff) / (2 * sensorVariance))
   # print(f"Left: {(1.0 / math.sqrt(2 * math.pi * sensorVariance))} ")
   # print(f"Right: {math.exp(- (diff * diff) / (2 * sensorVariance)) }")
-  print(f"Result:  {result}")
-  print()
+  #print(f"Result:  {result}")
   return result
 
 #see Text Table 5.4, implementation of sample normal distribution
