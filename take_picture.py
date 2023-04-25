@@ -51,10 +51,7 @@ def take_pic(robot: cozmo.robot.Robot):
         robot.turn_in_place(degrees(degree_increment)).wait_for_completed()
         angle += degree_increment
     
-    action4 = robot.say_text("finished", in_parallel=True)
-    action5 = robot.set_lift_height(1, in_parallel=True)
-    action4.wait_for_completed()
-    action5.wait_for_completed()
+    robot.say_text("finished").wait_for_completed()
     
 # Turns the robot a random amount simulating a kidnapping robot problem
 def randomTurn(robot: cozmo.robot.Robot):
@@ -70,12 +67,11 @@ def randomTurn(robot: cozmo.robot.Robot):
   if latest_image is not None:
     converted = annotated.convert()
     converted.save("latestImage.jpeg", "JPEG", resolution=10)
-  # robot.say_text("Oh Noooooooo they kidnapped me").wait_for_completed()
+  robot.say_text("Displaced").wait_for_completed()
 
 # Signals the program's completion
 def madeItHome(robot: cozmo.robot.Robot):
   global mode
-  mode = float(mode.mode[0])
   pano = cv2.imread('./Panorama_0.jpeg')
   home = cv2.imread('./images/rotation_0.jpeg')
   home = home[10:home.shape[1]-10, 10:home.shape[0]-10]
@@ -139,18 +135,19 @@ def on_robot_picked_up(robot: cozmo.robot.Robot):
 
 ''''''
 # Initial set up for the panorama
-# cozmo.run_program(take_pic)
+cozmo.run_program(take_pic)
 
 # Creates the panorama as Panorama.jpeg
-# stitching.run()
-# cozmo.run_program(fin_sti)
+stitching.run()
+cozmo.run_program(fin_sti)
 # 'Kidnaps' the cozmo by turning a random direction
 # cozmo.run_program(randomTurn)
 ''''''
 
-cozmo.run_program(on_robot_picked_up)
+while True:
+  cozmo.run_program(on_robot_picked_up)
 # Runs Monte Carlo algorithm 
-cozmo.run_program(mcl.monte_carlo_localize)
-mode = mcl.mm
-cozmo.run_program(madeItHome)
-histogram.makeHistogram()
+  cozmo.run_program(mcl.monte_carlo_localize)
+  mode = mcl.mm
+  cozmo.run_program(madeItHome)
+  histogram.makeHistogram()

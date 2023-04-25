@@ -32,7 +32,6 @@ proportionalMotionVariance = 0.01
 
 def monte_carlo_localize(robot: cozmo.robot.Robot):
   robot.set_head_angle((degrees(15))).wait_for_completed()
-  robot.set_lift_height(0).wait_for_completed()
   robot.say_text("mcl").wait_for_completed()
 
   panoPixelArray = cv2.imread("Panorama_0.jpeg")
@@ -57,9 +56,6 @@ def monte_carlo_localize(robot: cozmo.robot.Robot):
       # particles.append(random.randint(0, width))
     f += dist
     i += 1
-
-  # Saves preliminary predictions to a dataframe
-  pointFrame = pd.DataFrame(particles, columns=['particles'])
   
   i = 0
   while i < 10: # time steps is arbitrary
@@ -131,28 +127,41 @@ def monte_carlo_localize(robot: cozmo.robot.Robot):
         while p >= cdf[index]:
             index += 1
         newParticles.append(pixelPopulationNumber[index])
+
+    oldParticles = particles
     particles = newParticles
-    i += 1
-    np_particles = np.array(particles)
+
+    # merging old and new particles
+    n_oParticles = oldParticles + newParticles
     print("\n\n")
     print("guess: ")
-    print(st.mode(np_particles))
+    
+    mean, size = find_groups(15, n_oParticles)
 
-  newParticles.sort()
+    print(f"mean: {mean}")
+    print(f"size: {size}")
+    if size > 25:
+       break
+    i += 1
 
   # updating the CSV file with the original predictions and the newest predictions
   df = pd.DataFrame(newParticles, columns = ['newParticles'])
+  pointFrame = pd.DataFrame(oldParticles, columns=['oldParticles'])
   df = df.join(pointFrame) # joins new predictions with original predictions
   df = df.sort_values(by=['newParticles'], ascending=False)
   df.to_csv("data/data.csv", index = False)
 
-  particles = np.array(particles)
-
   robot.say_text("Finshing mcl").wait_for_completed()
   global mm
-  mm = st.mode(particles)
 
-  #mm = particles[find_groups(10, particles)]
+  print(f"length of particles: {len(n_oParticles)}")
+  (mean, size) = find_groups(20, n_oParticles)
+
+  # mode = st.mode(particles)
+  # mode = float(mode.mode[0])
+  mm = mean
+  print(f"mean: {mean}")
+  # print(f"mode: {mode}")
 
 
 
@@ -220,7 +229,7 @@ def compare_images(imageA, imageB):
   dimensions = dif.astype("float").shape
   width = dimensions[1]
   length = dimensions[0]
-  height = dimensions[2]
+ # height = dimensions[2]
 
 
   return 200 * np.mean(dif) / (width * length)
@@ -259,7 +268,11 @@ def slice(imgName, center, pixelLeft, pixelRight, height):
   return cv_sliced
   
 def find_groups(diff, particles):
-  groups = [[]] * len(particles)
+  groups = [[] for _ in range(len(particles))]
+
+
+  print(f"length of group: {len(groups)}")
+
   for i in range(len(particles)):
     groups[i].append(particles[i])
     for f in range(i+1, len(particles)):
@@ -274,7 +287,10 @@ def find_groups(diff, particles):
       max = len(groups[i])
       print(f"Group Length: {max}")
       max_index = i
-  return max_index
+  
+  size = len(groups[max_index])
+  mean = sum(groups[max_index]) / size
+  return mean, size 
      
 # TO-DO
 
