@@ -50,11 +50,8 @@ def monte_carlo_localize(robot: cozmo.robot.Robot):
   i = 0     # Iterations
 
   dist = width // M
-  f = dist
   while i < M:
-    particles.append(f)
-      # particles.append(random.randint(0, width))
-    f += dist
+    particles.append(random.random()*width)
     i += 1
   
   i = 0
@@ -132,15 +129,15 @@ def monte_carlo_localize(robot: cozmo.robot.Robot):
     particles = newParticles
 
     # merging old and new particles
-    n_oParticles = oldParticles + newParticles
+    # n_oParticles = oldParticles + newParticles
     print("\n\n")
     print("guess: ")
     
-    mean, size = find_groups(15, n_oParticles)
+    mean, size = find_groups(20, particles)
 
     print(f"mean: {mean}")
     print(f"size: {size}")
-    if size > 25:
+    if size > 30:
        break
     i += 1
 
@@ -154,8 +151,8 @@ def monte_carlo_localize(robot: cozmo.robot.Robot):
   robot.say_text("Finshing mcl").wait_for_completed()
   global mm
 
-  print(f"length of particles: {len(n_oParticles)}")
-  (mean, size) = find_groups(20, n_oParticles)
+  print(f"length of particles: {len(particles)}")
+  (mean, size) = find_groups(25, particles)
 
   # mode = st.mode(particles)
   # mode = float(mode.mode[0])

@@ -15,6 +15,7 @@ import numpy as np
 
 mode = 0
 
+
 def take_pic(robot: cozmo.robot.Robot):
     action1 = robot.say_text("taking pictures", in_parallel=True)
     action2 = robot.set_lift_height(0, in_parallel=True)
@@ -131,7 +132,6 @@ def on_robot_picked_up(robot: cozmo.robot.Robot):
         converted.save("latestImage.jpeg", "JPEG", resolution=10)
 
 
-    
 
 ''''''
 # Initial set up for the panorama
