@@ -1,0 +1,79 @@
+/* .main-body { 
+    background-image: url('bulb.jpeg');
+    margin: 0;
+    padding: 0;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    height: 90vh;
+    font-size: 20px;
+    overflow-x: hidden;
+    font-family: Montserrat, sans-serif;
+
+} */
+body{
+    font-size: 20px;
+    font-family: Montserrat, sans-serif;
+}
+
+body:not(#main-body) {
+    margin: 120px 30px;
+  }
+  
+
+.intro{
+    height: 70vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+.header {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 100px;
+    width: 100%;
+    background-color: #ffffff;
+    height: 80px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-sizing: border-box;
+    width: 100%;
+    padding: 15px;
+}
+.menu {
+    display: flex;
+    align-items: center;
+}
+.menu a {
+    color: #000000;
+    text-decoration: none;
+    margin: 0 20px;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+/* .menu a:hover {
+    color: grey;
+    text-decoration: underline;
+    text-decoration-style: double;
+  } */
+
+  .menu a:visited {
+    background-color: yellow;
+  }
+
+.header a {
+    text-decoration: none;
+    color: #000000;
+}
+.improv-cont{
+  margin-left: 115px;
+  margin-right: 115px;
+}
+
+.improv-cont li{
+  margin: 30px;
+}

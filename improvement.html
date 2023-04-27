@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="keywords" content="foo,bar" />
+    <meta name="description" content="foo" />
+    <!-- etc -->
+
+    <title>Improvements</title>
+    <link rel="stylesheet" type="text/css" href="style.css" />
+</head>
+
+<body>
+    <!-- Navigation Bar -->
+    <div class="header">
+        <div onclick="window.location.href = './main.html';" id="logo">
+            <a href="main.html">
+                <h1>COZMO</h1>
+            </a>
+        </div>
+        <div class="menu">
+            <a href="./goal.html">Goal</a>
+            <a href="./requirement.html">Requirement</a>
+            <a href="./documentation.html">Documentation</a>
+            <a href="./improvement.html">Improvements</a>
+        </div>
+    </div>
+
+
+    <div id="improvements">
+        <h1>What we improve</h1>
+        <div class="improv-cont">
+            <ul>
+                <li>Panorama stitching <br>
+
+                    The error that the previous group was having was that their
+                    panorama was not stitching all the images together and was leaving out large chunks. We changed the
+                    angle the robot turns before taking a new picture, from 10 degrees to 15. This then decreased the
+                    amount of images we needed to stitch together.</li>
+                <li>Detection of kidnaping <br>
+                    Instead of letting the robot perform a random turn to simulate the “kidnap”, we made a new function
+                    for the robot to detect being picked up, and after it has been set down, it will run the mcl
+                    algorithm.</li>
+                <li>MCL algorithm<br>
+                    The previous group only used the mcl algorithm to predict the
+                    location without physically locating the robot. We changed this by fixing the motion and measurement
+                    models, as well changing their implementation of the mcl algorithm. We also merged newParticles and
+                    oldParticles to get more data points and quicker convergence (this might not have been a good idea
+                    and needs to be tested further). </li>
+                <li>Add function to detect group with the most particles <br>
+                    We then added a new function that looks at every group of particles, and whichever group has the
+                    most particles, we take the mean of that group as our guess for the location. The size of the group
+                    converges noticeably as the robot turns and figures out where it is. (We at first simply used the
+                    mode of the particles and the convergence was negligible). The robot stops turning when the size of
+                    the group exceeds 25 (this number can be adjusted to affect accuracy. See the section that follows).
+                </li>
+                <li> Image comparation <br>
+                    For comparing the images we changed the code to use the ImageChops.difference function to allow us
+                    to get an estimated difference between a slice of the panorama and the latest image from Cozmo. We
+                    then used this difference in our measurement model to find the weights of the particles. This
+                    comparison gives more accurate results compared to the previous group’s comparison using mean-square
+                    error (assume it was implemented correctly).</li>
+                <li> Add function to find the home image within the panorama <br>
+                    The function allowed us to
+                    find the number of degrees that Cozmo needed to turn from his current position to get back home.
+                </li>
+                <li> Convergence in histogram <br>
+                    The histogram implemented by the previous group visualizes the convergence. </li>
+            </ul>
+        </div>
+
+        <h1>What you could do </h1>
+        <div class="improv-cont">
+            What still needs to be fixed, possible improvements, and special behaviors:
+
+            <ul>
+                <li> Better prediction <br>
+                    Cozmo makes good predictions of his location, but this prediction could be better, as it is
+                    consistently off by around 10 degrees. This could be improved by finding a better tuning for the
+                    diff argument and the bound for the checker (if size > *: break) in the mcl algorithm.
+                </li>
+
+                <li> Panorama Stitching <br>
+                    The panorama stitching is still a little fidgety as it sometimes doesn’t stitch images if they are
+                    too similar or too different. Also an interesting behavior we observed was that the panorama is
+                    almost always decent when the robot is set on the ground with distinguishable items in the
+                    environment. The panorama is almost always bad when the robot is set on an elevated platform.
+                </li>
+
+                <li> Waiting time for dislocating robots
+                    When you dislocate the robot, watch out for the timing. Refer to on_robot_picked_up() in
+                    take_picture.py for details. The timing can be modified.
+                </li>
+
+                <li>Termination of program <br>
+                    Our current method to terminate the program is to use control-c in the terminal multiple times. This
+                    could be done in a better way, i.e. when the button on the robot is pressed, when it’s lifted in a
+                    special way, when the cube is tapped.
+                </li>
+            </ul>
+        </div>
+
+</body>
+
+
+</html>
